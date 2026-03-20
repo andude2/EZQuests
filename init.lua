@@ -869,7 +869,7 @@ local function render_advanced_view_right_pane()
     if state.adv_selected_objective_source == 'self' then
         preview = 'Self (' .. my_name .. ')'
     elseif state.adv_selected_objective_source then
-        preview = state.adv_selected_objective_source
+        preview = state.adv_selected_objective_source or 'Auto (Self if available)'
     end
 
     if ImGui.BeginCombo('##ObjectiveSource', preview) then
