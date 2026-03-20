@@ -223,6 +223,12 @@ local function get_tasks()
     local taskList = mq.TLO.Window('TaskWnd/TASK_TaskList')
     local taskElementList = mq.TLO.Window('TaskWnd/TASK_TaskElementList')
 
+    if not taskList or not taskElementList then
+        printf('%s Failed to find task list windows', taskheader)
+        taskWnd.DoClose()
+        return tasks
+    end
+
     for i = 1, taskList.Items() do
         taskList.Select(i)
 
@@ -642,7 +648,7 @@ end
 local function render_task_header()
     local reporting_count = #state.peer_order + 1
 
-    ImGui.Text(string.format('Active tasks: %d', #state.local_tasks))
+    ImGui.Text('Active tasks: %d', #state.local_tasks)
     ImGui.SameLine()
 
     if ImGui.Button('Refresh') then
@@ -664,7 +670,7 @@ local function render_task_header()
     ImGui.SameLine(0, 4)
     ImGui.Text('= At least 1 bot missing task')
     ImGui.SameLine(0, 12)
-    ImGui.Text(string.format('Number of Peers reporting: %d', reporting_count))
+    ImGui.Text('Number of Peers reporting: %d', reporting_count)
 end
 
 local function render_peer_objectives_table(task, suffix)
@@ -686,7 +692,7 @@ local function render_peer_task_detail(task, auto_expand)
     if open then
         render_task_summary(task)
         if task.total_objectives > 0 then
-            ImGui.Text(string.format('Progress: %d/%d', task.completed_objectives, task.total_objectives))
+            ImGui.Text('Progress: %d/%d', task.completed_objectives, task.total_objectives)
         end
         if #task.objectives > 0 then
             ImGui.Separator()
@@ -824,7 +830,7 @@ local function render_advanced_peer_summary_table(entry)
             ImGui.TableNextColumn()
             colored_text(entry.local_task.is_complete and COLOR_COMPLETED or COLOR_ACTIVE, entry.local_task.is_complete and 'Complete' or 'In Progress')
             ImGui.TableNextColumn()
-            ImGui.Text(string.format('%d/%d', entry.local_task.completed_objectives, entry.local_task.total_objectives))
+            ImGui.Text('%d/%d', entry.local_task.completed_objectives, entry.local_task.total_objectives)
         end
 
         for _, peer_name in ipairs(state.peer_order) do
@@ -836,7 +842,7 @@ local function render_advanced_peer_summary_table(entry)
                 ImGui.TableNextColumn()
                 colored_text(peer_task.is_complete and COLOR_COMPLETED or COLOR_ACTIVE, peer_task.is_complete and 'Complete' or 'In Progress')
                 ImGui.TableNextColumn()
-                ImGui.Text(string.format('%d/%d', peer_task.completed_objectives, peer_task.total_objectives))
+                ImGui.Text('%d/%d', peer_task.completed_objectives, peer_task.total_objectives)
             end
         end
 
@@ -1051,7 +1057,7 @@ end
 
 local function handle_message(message)
     log_debug('handle_message called')
-    local content = message()
+    local content = message.content
     if not content or not content.id then
         log_debug('Message has no content or id')
         return
