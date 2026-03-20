@@ -2,6 +2,8 @@
 
 A peer-to-peer quest tracking tool for EverQuest. Monitor task progress across your entire group or raid in real-time from a single screen.
 
+<img align="center" width="882" height="585" alt="EQZQuests main" src="https://github.com/user-attachments/assets/912c58dd-c6ac-4dff-b10b-203e6214118a" />
+
 ## Features
 
 - **Real-time Task Sync**: Automatically shares quest data with all peers running EZQuests
@@ -9,6 +11,8 @@ A peer-to-peer quest tracking tool for EverQuest. Monitor task progress across y
 - **Task Coverage Indicators**: Quickly identify which peers are missing specific tasks (`[OK]` = all have it, `[X]` = some missing)
 - **Detailed Task View**: Click any task to see detailed objective progress across all peers
 - **Advanced View**: Browse all tasks across all peers in a split-pane interface
+
+<img align="center" width="1028" height="685" alt="EZQuests Advanced View" src="https://github.com/user-attachments/assets/8d095652-c805-4e81-a256-39f6158b3db8" />
 
 ## Installation
 
