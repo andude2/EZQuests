@@ -59,8 +59,7 @@ EZQuests uses MacroQuest's actor system to communicate between characters:
 ## Requirements
 
 - MacroQuest
-- DanNet or EQBC (for peer discovery)
-- ImGui (for UI rendering)
+- DanNet or EQBC (for peer discovery))
 
 ## Configuration
 
