@@ -31,6 +31,7 @@ local COLOR_MISSING = { 0.95, 0.35, 0.35, 1.00 }
 local COLOR_MUTED = { 0.65, 0.65, 0.65, 1.00 }
 local COLOR_HEADER = { 0.90, 0.90, 0.50, 1.00 }
 local COLOR_PEER = { 0.65, 0.85, 1.00, 1.00 }
+local COLOR_SELECTED = { 0.30, 0.90, 0.30, 1.00 }
 
 local window_flags = 0
 local tree_flags = bit32.bor(ImGuiTreeNodeFlags.Framed, ImGuiTreeNodeFlags.SpanAvailWidth)
@@ -507,7 +508,7 @@ local function close_script()
     running = false
 end
 
-local function render_objectives_table(task, suffix)
+local function render_objectives_table(task, suffix, all_peer_objectives)
     if #task.objectives == 0 then
         colored_text(COLOR_MUTED, 'No objectives found for this task yet.')
         return
@@ -540,6 +541,19 @@ local function render_objectives_table(task, suffix)
             local status_color = objective.is_complete and COLOR_COMPLETED or COLOR_ACTIVE
             local status_text = objective.status ~= '' and objective.status or (objective.is_complete and 'Done' or 'In Progress')
             colored_text(status_color, status_text)
+            if all_peer_objectives and ImGui.IsItemHovered() then
+                local tooltip = ''
+                for _, peer_info in ipairs(all_peer_objectives) do
+                    if peer_info.objectives[objective.index] then
+                        local peer_obj = peer_info.objectives[objective.index]
+                        local peer_status = peer_obj.status ~= '' and peer_obj.status or (peer_obj.is_complete and 'Done' or 'In Progress')
+                        tooltip = tooltip .. string.format('%s: %s\n', peer_info.name, peer_status)
+                    end
+                end
+                if tooltip ~= '' then
+                    ImGui.SetTooltip(tooltip)
+                end
+            end
 
             ImGui.TableNextColumn()
             ImGui.Text(objective.zone ~= '' and objective.zone or 'Any')
@@ -817,8 +831,20 @@ local function render_detail_window()
 end
 
 local function render_advanced_peer_summary_table(entry)
+    -- Collect all peer task data first for tooltips
+    local all_tasks = {}
+    if entry.local_task then
+        table.insert(all_tasks, { name = my_name, task = entry.local_task })
+    end
+    for _, peer_name in ipairs(state.peer_order) do
+        local peer_task = find_peer_task(state.peer_tasks[peer_name], entry.key)
+        if peer_task then
+            table.insert(all_tasks, { name = peer_name, task = peer_task })
+        end
+    end
+
     if ImGui.BeginTable('PeerSummary##' .. entry.key, 3, bit32.bor(ImGuiTableFlags.RowBg, ImGuiTableFlags.BordersInner, ImGuiTableFlags.BordersOuter)) then
-        ImGui.TableSetupColumn('Peer', ImGuiTableColumnFlags.WidthStretch, 150)
+        ImGui.TableSetupColumn('Peer', ImGuiTableColumnFlags.WidthFixed, 150)
         ImGui.TableSetupColumn('Status', ImGuiTableColumnFlags.WidthFixed, 100)
         ImGui.TableSetupColumn('Progress', ImGuiTableColumnFlags.WidthFixed, 100)
         ImGui.TableHeadersRow()
@@ -826,23 +852,51 @@ local function render_advanced_peer_summary_table(entry)
         if entry.local_task then
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
-            colored_text(COLOR_PEER, my_name)
+            local label = string.format('%s##peer_self_%s', my_name, entry.key)
+            if ImGui.Selectable(label, state.adv_selected_objective_source == 'self') then
+                state.adv_selected_objective_source = 'self'
+            end
             ImGui.TableNextColumn()
-            colored_text(entry.local_task.is_complete and COLOR_COMPLETED or COLOR_ACTIVE, entry.local_task.is_complete and 'Complete' or 'In Progress')
+            ImGui.Text(entry.local_task.is_complete and 'Complete' or 'In Progress')
             ImGui.TableNextColumn()
-            ImGui.Text('%d/%d', entry.local_task.completed_objectives, entry.local_task.total_objectives)
+            local prog_text = string.format('%d/%d', entry.local_task.completed_objectives, entry.local_task.total_objectives)
+            ImGui.Selectable(prog_text .. '##prog_self_' .. entry.key, false, ImGuiSelectableFlags.None)
+            if ImGui.IsItemHovered() then
+                local tooltip = ''
+                for _, info in ipairs(all_tasks) do
+                    for _, obj in ipairs(info.task.objectives) do
+                        local status = obj.is_complete and 'Done' or 'In Progress'
+                        tooltip = tooltip .. string.format('%s[%d]: %s - %s\n', info.name, obj.index, status, obj.instruction)
+                    end
+                end
+                ImGui.SetTooltip(tooltip)
+            end
         end
 
-        for _, peer_name in ipairs(state.peer_order) do
+        for idx, peer_name in ipairs(state.peer_order) do
             local peer_task = find_peer_task(state.peer_tasks[peer_name], entry.key)
             if peer_task then
                 ImGui.TableNextRow()
                 ImGui.TableNextColumn()
-                ImGui.Text(peer_name)
+                local label = string.format('%s##peer_row_%d_%s', peer_name, idx, entry.key)
+                if ImGui.Selectable(label, state.adv_selected_objective_source == peer_name) then
+                    state.adv_selected_objective_source = peer_name
+                end
                 ImGui.TableNextColumn()
-                colored_text(peer_task.is_complete and COLOR_COMPLETED or COLOR_ACTIVE, peer_task.is_complete and 'Complete' or 'In Progress')
+                ImGui.Text(peer_task.is_complete and 'Complete' or 'In Progress')
                 ImGui.TableNextColumn()
-                ImGui.Text('%d/%d', peer_task.completed_objectives, peer_task.total_objectives)
+                local prog_text = string.format('%d/%d', peer_task.completed_objectives, peer_task.total_objectives)
+                ImGui.Selectable(prog_text .. '##prog_' .. idx .. '_' .. entry.key, false, ImGuiSelectableFlags.None)
+                if ImGui.IsItemHovered() then
+                    local tooltip = ''
+                    for _, info in ipairs(all_tasks) do
+                        for _, obj in ipairs(info.task.objectives) do
+                            local status = obj.is_complete and 'Done' or 'In Progress'
+                            tooltip = tooltip .. string.format('%s[%d]: %s - %s\n', info.name, obj.index, status, obj.instruction)
+                        end
+                    end
+                    ImGui.SetTooltip(tooltip)
+                end
             end
         end
 
@@ -926,12 +980,25 @@ local function render_advanced_view_right_pane()
     end
 
     ImGui.Separator()
-    colored_text({ 0.75, 0.90, 1.00, 1.00 }, 'Who has this task:')
-    render_advanced_peer_summary_table(entry)
+    if ImGui.CollapsingHeader('Who has this task:', ImGuiTreeNodeFlags.DefaultOpen) then
+        render_advanced_peer_summary_table(entry)
+    end
 
     if #task_to_show.objectives > 0 then
+        -- Build peer objectives data for tooltips
+        local all_peer_objectives = {}
+        if entry.local_task then
+            table.insert(all_peer_objectives, { name = my_name, objectives = entry.local_task.objectives })
+        end
+        for _, peer_name in ipairs(state.peer_order) do
+            local peer_task = find_peer_task(state.peer_tasks[peer_name], entry.key)
+            if peer_task then
+                table.insert(all_peer_objectives, { name = peer_name, objectives = peer_task.objectives })
+            end
+        end
+
         ImGui.Separator()
-        render_objectives_table(task_to_show, 'advanced_' .. entry.key)
+        render_objectives_table(task_to_show, 'advanced_' .. entry.key, all_peer_objectives)
     end
 end
 
