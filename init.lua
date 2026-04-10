@@ -861,16 +861,6 @@ local function render_advanced_peer_summary_table(entry)
             ImGui.TableNextColumn()
             local prog_text = string.format('%d/%d', entry.local_task.completed_objectives, entry.local_task.total_objectives)
             ImGui.Selectable(prog_text .. '##prog_self_' .. entry.key, false, ImGuiSelectableFlags.None)
-            if ImGui.IsItemHovered() then
-                local tooltip = ''
-                for _, info in ipairs(all_tasks) do
-                    for _, obj in ipairs(info.task.objectives) do
-                        local status = obj.is_complete and 'Done' or 'In Progress'
-                        tooltip = tooltip .. string.format('%s[%d]: %s - %s\n', info.name, obj.index, status, obj.instruction)
-                    end
-                end
-                ImGui.SetTooltip(tooltip)
-            end
         end
 
         for idx, peer_name in ipairs(state.peer_order) do
@@ -887,16 +877,6 @@ local function render_advanced_peer_summary_table(entry)
                 ImGui.TableNextColumn()
                 local prog_text = string.format('%d/%d', peer_task.completed_objectives, peer_task.total_objectives)
                 ImGui.Selectable(prog_text .. '##prog_' .. idx .. '_' .. entry.key, false, ImGuiSelectableFlags.None)
-                if ImGui.IsItemHovered() then
-                    local tooltip = ''
-                    for _, info in ipairs(all_tasks) do
-                        for _, obj in ipairs(info.task.objectives) do
-                            local status = obj.is_complete and 'Done' or 'In Progress'
-                            tooltip = tooltip .. string.format('%s[%d]: %s - %s\n', info.name, obj.index, status, obj.instruction)
-                        end
-                    end
-                    ImGui.SetTooltip(tooltip)
-                end
             end
         end
 
